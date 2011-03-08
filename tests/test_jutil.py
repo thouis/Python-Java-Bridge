@@ -21,9 +21,12 @@ import numpy as np
 import threading
 import unittest
 
-import cellprofiler.utilities.jutil as J
-import bioformats # to start the VM
+import javabridge.jutil as J
+J.start_vm([])
 jb = J.javabridge
+
+def teardown_module():
+    J.kill_vm()
 
 class TestJutil(unittest.TestCase):
     def setUp(self):

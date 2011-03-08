@@ -18,15 +18,18 @@ __version__="$Revision$"
 import numpy as np
 import unittest
 
-import cellprofiler.utilities.jutil
-import bioformats # needed to start the common vm
-jb = cellprofiler.utilities.jutil.javabridge
+import javabridge.jutil
+javabridge.jutil.start_vm([])
+jb = javabridge.jutil.javabridge
+
+def teardown_module():
+    javabridge.jutil.kill_vm()
 
 class TestJavabridge(unittest.TestCase):
     def setUp(self):
-        self.env = cellprofiler.utilities.jutil.attach()
+        self.env = javabridge.jutil.attach()
     def tearDown(self):
-        cellprofiler.utilities.jutil.detach()
+        javabridge.jutil.detach()
 
     def test_01_01_version(self):
         major,minor = self.env.get_version()
@@ -314,8 +317,6 @@ class TestJavabridge(unittest.TestCase):
         self.assertTrue(method_id is not None)
         self.assertFalse(self.env.call_static_method(klass, method_id, 
                                                 self.env.new_string_utf("os.name")))
-        self.assertTrue(self.env.call_static_method(klass, method_id,
-                                               self.env.new_string_utf("loci.bioformats.loaded")))
         
     def test_04_02_call_static_byte(self):
         klass = self.env.find_class("java/lang/Byte")

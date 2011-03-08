@@ -1,18 +1,12 @@
-"""cellprofiler.utilities.setup - compiling files in the utilities module
+'''javabridge - Wraps the Java Native Interface (JNI) using Cython.
 
-CellProfiler is distributed under the GNU General Public License,
-but this file is licensed under the more permissive BSD license.
-See the accompanying file LICENSE for details.
-
-Copyright (c) 2003-2009 Massachusetts Institute of Technology
-Copyright (c) 2009-2010 Broad Institute
-All rights reserved.
-
-Please see the AUTHORS file for credits.
-
+This code originated as part of the CellProfiler project.  
 Website: http://www.cellprofiler.org
-"""
-__version__="$Revision$"
+Copyright (c) 2003-2009 Massachusetts Institute of Technology
+Copyright (c) 2009-2011 Broad Institute
+It is maintained by Thouis Jones <thouis.jones@curie.fr>
+It is licensed under the GPL and BSD licenses.
+'''
 
 import os
 import sys
@@ -23,90 +17,52 @@ is_win64 = (is_win and (os.environ["PROCESSOR_ARCHITECTURE"] == "AMD64"))
 is_msvc = (is_win and sys.version_info[0] >= 2 and sys.version_info[1] >= 6)
 is_mingw = (is_win and not is_msvc)
 
-if not hasattr(sys, 'frozen'):
-    from distutils.core import setup,Extension
-    from distutils.sysconfig import get_config_var
 
-    try:
-        from Cython.Distutils import build_ext
-        from numpy import get_include
-    except ImportError:
-        import site
-        site.addsitedir('../../site-packages')
-        from Cython.Distutils import build_ext
-        from numpy import get_include
+from distutils.core import setup,Extension
+from distutils.sysconfig import get_config_var
+from numpy import get_include
+from numpy.distutils.misc_util import Configuration
+from Cython.Distutils import build_ext
 
-    def configuration():
-        extensions = []
-        if is_win:
-            extensions += [Extension(name="_get_proper_case_filename",
-                                     sources=["get_proper_case_filename.c"],
-                                     libraries=["shlwapi", "shell32", "ole32"],
-                                     extra_compile_args=['-O3'])]
-        try:
-            #
-            # Find JAVA_HOME, possibly from Windows registry
-            #
-            java_home = find_javahome()
-            jdk_home = find_jdk()
-            print "Using jdk_home = %s"%jdk_home
-            include_dirs = [get_include()]
-            extra_link_args = None
-            libraries = None
-            library_dirs = None
-            javabridge_sources = [ "javabridge.pyx" ]
-            if is_win:
-                if jdk_home is not None:
-                    jdk_include = os.path.join(jdk_home, "include")
-                    jdk_include_plat = os.path.join(jdk_include, sys.platform)
-                    include_dirs += [jdk_include, jdk_include_plat]
-                if is_mingw:
-                    #
-                    # Build libjvm from jvm.dll on Windows.
-                    # This assumes that we're using mingw32 for build
-                    #
-                    cmd = ["dlltool", "--dllname", 
-                           os.path.join(jdk_home,"jre\\bin\\client\\jvm.dll"),
-                           "--output-lib","libjvm.a",
-                           "--input-def","jvm.def",
-                           "--kill-at"]
-                    p = subprocess.Popen(cmd)
-                    p.communicate()
-                    library_dirs = [os.path.abspath(".")]
-                else:
-                    #
-                    # Use the MSVC lib in the JDK
-                    #
-                    jdk_lib = os.path.join(jdk_home, "lib")
-                    library_dirs = [jdk_lib]
-                    javabridge_sources.append("strtoull.c")
-            
-                libraries = ["jvm"]
-            elif sys.platform == 'darwin':
-                include_dirs += ['/System/Library/Frameworks/JavaVM.framework/Headers']
-                extra_link_args = ['-framework', 'JavaVM']
-            elif sys.platform.startswith('linux'):
-                include_dirs += [os.path.join(java_home,'include'),
-                                 os.path.join(java_home,'include','linux')]
-                library_dirs = [os.path.join(java_home,'jre','lib','amd64','server')]
-                libraries = ["jvm"]
-            extensions += [Extension(name="javabridge",
-                                     sources=javabridge_sources,
-                                     libraries=libraries,
-                                     library_dirs=library_dirs,
-                                     include_dirs=include_dirs,
-                                     extra_link_args=extra_link_args)]
-        except Exception, e:
-            print "WARNING: Java and JVM is not installed - Images will be loaded using PIL (%s)"%(str(e))
-            
-        dict = { "name":"utilities",
-                 "description":"utility module for CellProfiler",
-                 "maintainer":"Lee Kamentsky",
-                 "maintainer_email":"leek@broad.mit.edu",
-                 "cmdclass": {'build_ext': build_ext},
-                 "ext_modules": extensions
-                }
-        return dict
+
+# from http://packages.python.org/an_example_pypi_project/setuptools.html
+def read(fname):
+    return open(os.path.join(os.path.dirname(__file__), fname)).read()
+
+def configuration(parent_package='',top_path=None):
+    from numpy.distutils.misc_util import Configuration
+
+    dict = { "name" : "javabridge",
+             "version" : "0.1",
+             "keywords" : "java native interface jni",
+             "long_description" : read('README.txt'),
+             "url" : "https://github.com/thouis/Python-Java-Bridge",
+             "description" : "python wrapper for the Java Native Interface",
+             "maintainer" : "Thouis Jones",
+             "maintainer_email" : "thouis.jones@curie.fr",
+             "classifiers" : ["Development Status :: 3 - Alpha"],
+             "cmdclass": {'build_ext' : build_ext},
+             "ext_modules": [setup_java_bridge_extension()]
+             }
+
+    config = Configuration('javabridge', parent_package, top_path, **dict)
+
+    def add_test_directories(arg, dirname, fnames):
+        if dirname.split(os.path.sep)[-1] == 'tests':
+            config.add_data_dir(dirname)
+
+    # Add test directories
+    from os.path import isdir, dirname, join, abspath
+    rel_isdir = lambda d: isdir(join(curpath, d))
+
+    curpath = join(dirname(__file__), './')
+    subdirs = [join(d, 'tests') for d in os.listdir(curpath) if rel_isdir(d)]
+    subdirs = [d for d in subdirs if rel_isdir(d)]
+    for test_dir in subdirs:
+        config.add_data_dir(test_dir)
+
+    return config
+    
 
 def find_javahome():
     """Find JAVA_HOME if it doesn't exist"""
@@ -166,9 +122,66 @@ def find_jdk():
                                     for i in range(_winreg.QueryInfoKey(kjdk_current)[1])])
         return kjdk_current_values['JavaHome']
     
-if __name__ == '__main__':
-    if '/' in __file__:
-        os.chdir(os.path.dirname(__file__))
-    setup(**configuration())
+
+def setup_java_bridge_extension():
+    #
+    # Find JAVA_HOME, possibly from Windows registry
+    #
+    java_home = find_javahome()
+    jdk_home = find_jdk()
+    print "Using jdk_home = %s"%jdk_home
+    include_dirs = [get_include()]
+    extra_link_args = None
+    libraries = None
+    library_dirs = None
+    javabridge_sources = [ "javabridge/javabridge.pyx" ]
+    if is_win:
+        if jdk_home is not None:
+            jdk_include = os.path.join(jdk_home, "include")
+            jdk_include_plat = os.path.join(jdk_include, sys.platform)
+            include_dirs += [jdk_include, jdk_include_plat]
+        if is_mingw:
+            #
+            # Build libjvm from jvm.dll on Windows.
+            # This assumes that we're using mingw32 for build
+            #
+            cmd = ["dlltool", "--dllname", 
+                   os.path.join(jdk_home,"jre\\bin\\client\\jvm.dll"),
+                   "--output-lib","libjvm.a",
+                   "--input-def","jvm.def",
+                   "--kill-at"]
+            p = subprocess.Popen(cmd)
+            p.communicate()
+            library_dirs = [os.path.abspath(".")]
+        else:
+            #
+            # Use the MSVC lib in the JDK
+            #
+            jdk_lib = os.path.join(jdk_home, "lib")
+            library_dirs = [jdk_lib]
+            javabridge_sources.append("javabridge/strtoull.c")
     
+        libraries = ["jvm"]
+    elif sys.platform == 'darwin':
+        include_dirs += ['/System/Library/Frameworks/JavaVM.framework/Headers']
+        extra_link_args = ['-framework', 'JavaVM']
+    elif sys.platform.startswith('linux'):
+        include_dirs += [os.path.join(java_home,'include'),
+                         os.path.join(java_home,'include','linux')]
+        library_dirs = [os.path.join(java_home,'jre','lib','amd64','server')]
+        libraries = ["jvm"]
+
+    java_bridge_extension = Extension("javabridge/javabridge",
+                                      sources=javabridge_sources,
+                                      libraries=libraries,
+                                      library_dirs=library_dirs,
+                                      include_dirs=include_dirs,
+                                      extra_link_args=extra_link_args)
+    return java_bridge_extension
+
+
+if __name__ == "__main__":
+    from numpy.distutils.core import setup
+    setup(**configuration(top_path='').todict())
+
 
