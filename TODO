@@ -1,0 +1,6 @@
+- prerequisites in pypi file: Cython, others?
+- ASCII to Unicode changes
+- examples (currently only in the tests)
+- documentation
+- more general JDK finding in setup.py (look at other JNI-using pypi projects)
+- ... also for Windows compilers - Lee?
