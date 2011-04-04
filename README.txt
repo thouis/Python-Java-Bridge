@@ -7,4 +7,8 @@ This code should be considered pre-Alpha quality.  It has been in use
 in the CellProfiler project, but may take some time to stabilize as a
 standalone library.
 
-Cython is used to compile and link the JNI.
+This package requires numpy.
+
+Cython is used to generate the Python-to-JNI-to-Java interface, but
+Cython does not have to be installed (the Cython-generated C code is
+included in the distribution).
