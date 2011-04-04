@@ -120,7 +120,7 @@ print "DEBUG", sys.argv
 print jbridge.sources
 
 setup(name="javabridge",
-      version="0.1",
+      version="0.2",
       keywords="java native interface jni",
       long_description=read('README.txt'),
       url="https://github.com/thouis/Python-Java-Bridge",
