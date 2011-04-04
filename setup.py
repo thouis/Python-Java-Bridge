@@ -120,7 +120,7 @@ jbridge = Extension("_jbridge",
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
-setup(
+setup({
     "name" : "javabridge",
     "version" : "0.1",
     "keywords" : "java native interface jni",
@@ -137,5 +137,5 @@ setup(
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
         'Programming Language :: Java',
-        'Topic :: Software Development :: Libraries :: Java Libraries',]
+        'Topic :: Software Development :: Libraries :: Java Libraries',]}
 )
