@@ -1,11 +1,10 @@
 import sys
+import os
 import traceback
 import subprocess
 
-from distutils.core import setup
+from distutils.core import setup, Extension
 from distutils.log import debug
-from distutils.extension import Extension
-from Cython.Build import cythonize
 from numpy.distutils.misc_util import get_numpy_include_dirs
 
 
@@ -70,6 +69,7 @@ debug("Using java_home = %s"%java_home)
 jdk_home = find_jdk()
 debug("Using jdk_home = %s"%jdk_home)
 
+extra_sources=[]
 if sys.platform == 'darwin':
         include_dirs += ['/System/Library/Frameworks/JavaVM.framework/Headers']
         extra_link_args = ['-framework', 'JavaVM']
@@ -105,37 +105,34 @@ elif sys.platform.startswith('linux'):
     library_dirs = [os.path.join(java_home,'jre','lib','amd64','server')]
     libraries = ["jvm"]
 
-
-
-jbridge = Extension("_jbridge",
-                    ["javabridge/javabridge.pyx"] + extra_sources,
+jbridge = Extension("javabridge.javabridge", 
+                    ["javabridge/javabridge.c"] + extra_sources,
                     libraries=libraries,
                     library_dirs=library_dirs,
                     include_dirs=include_dirs,
                     extra_link_args=extra_link_args)
 
-
-
 # from http://packages.python.org/an_example_pypi_project/setuptools.html
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
-setup({
-    "name" : "javabridge",
-    "version" : "0.1",
-    "keywords" : "java native interface jni",
-    "long_description" : read('README.txt'),
-    "url" : "https://github.com/thouis/Python-Java-Bridge",
-    "description" : "python wrapper for the Java Native Interface",
-    "maintainer" : "Thouis Jones",
-    "maintainer_email" : "thouis.jones@curie.fr",
-    "classifiers" : ["Development Status :: 3 - Alpha"],
-    "cmdclass": {'build_ext' : build_ext},
-    ext_modules = cythonize(jbridge),
-    classifiers = [
+print "DEBUG", sys.argv
+print jbridge.sources
+
+setup(name="javabridge",
+      version="0.1",
+      keywords="java native interface jni",
+      long_description=read('README.txt'),
+      url="https://github.com/thouis/Python-Java-Bridge",
+      description="python wrapper for the Java Native Interface",
+      maintainer="Thouis Jones",
+      maintainer_email="thouis.jones@curie.fr",
+      packages=['javabridge'],
+      package_data={'javabridge': ['*.class']},
+      ext_modules=[jbridge],
+      classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
         'Programming Language :: Java',
-        'Topic :: Software Development :: Libraries :: Java Libraries',]}
-)
+        'Topic :: Software Development :: Libraries :: Java Libraries',])

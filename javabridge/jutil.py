@@ -47,6 +47,7 @@ import subprocess
 import sys
 
 jvm_dir = None
+java_home = None
 if sys.platform.startswith('win'):
     #
     # Try harder by looking for JAVA_HOME and in the registry
@@ -80,11 +81,7 @@ elif sys.platform.startswith('linux'):
     # find the search path for the JVM.
     #
     import ctypes
-    if hasattr(sys, 'frozen'):
-        path = os.path.split(os.path.abspath(sys.argv[0]))[0]
-        path = os.path.join(path, 'cellprofiler','utilities')
-    else:
-        path = os.path.split(__file__)[0]
+    path = os.path.split(__file__)[0]
     p = subprocess.Popen(["java","-cp", path, "findlibjvm"],
                          stdout=subprocess.PIPE)
     stdout, stderr = p.communicate()
@@ -92,69 +89,7 @@ elif sys.platform.startswith('linux'):
     ctypes.CDLL(os.path.join(jvm_dir, "libjvm.so"))
 
 if jvm_dir is None:
-    from cellprofiler.preferences \
-         import get_report_jvm_error, set_report_jvm_error, get_headless
-    from cellprofiler.preferences import set_has_reported_jvm_error
-    
-    if not get_headless():
-        import wx
-
-        app = wx.GetApp()
-        if app is not None and get_report_jvm_error():
-            dlg = wx.Dialog(wx.GetApp().GetTopWindow(),
-                            title="Java not installed properly")
-            sizer = wx.BoxSizer(wx.VERTICAL)
-            dlg.SetSizer(sizer)
-            text = wx.StaticText(dlg,-1, 
-                                 "CellProfiler can't find Java on your computer.")
-            text.Font = wx.Font(int(dlg.Font.GetPointSize()*5/4),
-                                dlg.Font.GetFamily(),
-                                dlg.Font.GetStyle(),
-                                wx.FONTWEIGHT_BOLD)
-            sizer.Add(text, 0, wx.ALIGN_LEFT | wx.ALL, 5)
-            if java_home is None or sys.platform == "darwin":
-                label = \
-"""CellProfiler cannot find the location of Java on your computer.
-CellProfiler can process images without Java, but uses the Bioformats Java
-library to process images if Java is available.
-
-You can download the Java runtime for your operating system at:
-http://www.java.com/en/download/index.jsp
-"""
-            else:
-                label = \
-"""CellProfiler cannot find the location of Java on your computer.
-CellProfiler can process images without Java, but uses the Bioformats Java
-library to process images if Java is available.
-
-Your computer may not be configured correctly. Your computer is configured
-as if Java is installed in the directory, "%s", but the files that CellProfiler
-needs do not seem to be installed there. Please see:
-
-http://cellprofiler.org/wiki/index.php/Installing_Java
-
-for more help.""" % java_home
-                    
-            sizer.Add(wx.StaticText(dlg, label = label), 
-                      0, wx.EXPAND | wx.ALL, 5)
-            report_ctrl = wx.CheckBox(
-                dlg, label = "Don't show this message again.")
-            report_ctrl.Value = False
-            sizer.Add(report_ctrl, 0, wx.ALIGN_LEFT | wx.ALL, 5)
-            buttons_sizer = wx.StdDialogButtonSizer()
-            buttons_sizer.AddButton(wx.Button(dlg, wx.ID_OK))
-            buttons_sizer.Realize()
-            sizer.Add(buttons_sizer, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.ALL, 5)
-            dlg.Fit()
-            dlg.ShowModal()
-            show_jvm_error_dlg = False
-            if report_ctrl.Value:
-                set_report_jvm_error(False)
-            else:
-                # Just for this run, turn off reporting
-                set_has_reported_jvm_error()
-            
-    raise IOError("Can't find jvm directory")
+    raise IOError("Can't find jvm directory%s"%(" (tried %s)"%(java_home) if java_home else ""))
     
 import javabridge
 import re    
