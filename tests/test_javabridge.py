@@ -22,7 +22,7 @@ import javabridge.jutil
 javabridge.jutil.start_vm([])
 jb = javabridge.jutil.javabridge
 
-def teardown_module():
+def tearDownModule():
     javabridge.jutil.kill_vm()
 
 class TestJavabridge(unittest.TestCase):
