@@ -116,15 +116,13 @@ jbridge = Extension("javabridge.javabridge",
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
-print "DEBUG", sys.argv
-print jbridge.sources
-
 setup(name="javabridge",
       version="0.2",
       keywords="java native interface jni",
       long_description=read('README.txt'),
       url="https://github.com/thouis/Python-Java-Bridge",
       description="python wrapper for the Java Native Interface",
+      author="CellProfiler Project",
       maintainer="Thouis Jones",
       maintainer_email="thouis.jones@curie.fr",
       packages=['javabridge'],
